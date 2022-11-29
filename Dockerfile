@@ -1,18 +1,17 @@
-FROM alpine:edge
-LABEL maintainer="dev@jpillora.com"
-# webproc release settings
-ENV WEBPROC_VERSION 0.2.2
-ENV WEBPROC_URL https://github.com/jpillora/webproc/releases/download/$WEBPROC_VERSION/webproc_linux_amd64.gz
+FROM alpine:3.17
+LABEL maintainer="docker-dnsmasq-dev@whi.tw"
 # fetch dnsmasq and webproc binary
-RUN apk update \
-	&& apk --no-cache add dnsmasq \
-	&& apk add --no-cache --virtual .build-deps curl \
-	&& curl -sL $WEBPROC_URL | gzip -d - > /usr/local/bin/webproc \
-	&& chmod +x /usr/local/bin/webproc \
-	&& apk del .build-deps
+RUN apk add --no-cache \
+		dnsmasq
+
 #configure dnsmasq
-RUN mkdir -p /etc/default/
-RUN echo -e "ENABLED=1\nIGNORE_RESOLVCONF=yes" > /etc/default/dnsmasq
+RUN mkdir -p /etc/default/ \
+	&& echo -e "ENABLED=1\nIGNORE_RESOLVCONF=yes" > /etc/default/dnsmasq
+RUN mkdir -p /etc/dnsmasq.d/
+
 COPY dnsmasq.conf /etc/dnsmasq.conf
+VOLUME [ "/etc/dnsmasq.d" ]
+
+EXPOSE 53/tcp 53/udp
 #run!
-ENTRYPOINT ["webproc","--config","/etc/dnsmasq.conf","--","dnsmasq","--no-daemon"]
+ENTRYPOINT ["dnsmasq", "--no-daemon"]
